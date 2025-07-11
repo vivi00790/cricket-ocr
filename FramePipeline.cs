@@ -77,7 +77,26 @@ public class FramePipeline
         {
             Console.WriteLine($"Worker {workerId} processing frame {item.FrameNumber} at {item.Timestamp:HH:mm:ss.fff}");
             var ocrData = _processor.ProcessFrame(item.Frame);
-            _parser.ProcessFrameData(ocrData, item.FrameNumber, item.Timestamp);
+            if (ocrData["BattingTeam"].Length ==3 && ocrData["BattingTeam"].Any(char.IsLetter) && ocrData["BattingTeam"].All(c => !char.IsLetter(c) || char.IsUpper(c))) // 如果 BattingTeam 是 999，則跳過這一幀
+            {
+                _parser.ProcessFrameData(new FrameData
+                {
+                    RunsWickets = ocrData.GetValueOrDefault("RunsWickets", "999"),
+                    Runs1Digit = ocrData.GetValueOrDefault("Runs1Digit", "999"),
+                    Runs2Digits = ocrData.GetValueOrDefault("Runs2Digits", "999"),
+                    Runs3Digits = ocrData.GetValueOrDefault("Runs3Digits", "999"),
+                    Runs1DigitWickets = ocrData.GetValueOrDefault("Runs1DigitWickets", "999"),
+                    Runs2DigitsWickets = ocrData.GetValueOrDefault("Runs2DigitsWickets", "999"),
+                    Runs3DigitsWickets = ocrData.GetValueOrDefault("Runs3DigitsWickets", "999"),
+                    Over = ocrData.GetValueOrDefault("Over", "999"),
+                    Ball = ocrData.GetValueOrDefault("Ball", "999"),
+                    OverWithBall = ocrData.GetValueOrDefault("OverWithBall", "999"),
+                    Batter1 = ocrData.GetValueOrDefault("Batter1", "Unknown"),
+                    Batter2 = ocrData.GetValueOrDefault("Batter2", "Unknown"),
+                    Bowler = ocrData.GetValueOrDefault("Bowler", "Unknown"),
+                    BattingTeam = ocrData.GetValueOrDefault("BattingTeam", "Unknown")
+                }, item.FrameNumber, item.Timestamp);
+            }
             item.Frame.Dispose();
         }
         Console.WriteLine($"Worker {workerId} completed processing.");

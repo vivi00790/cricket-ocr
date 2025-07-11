@@ -1,0 +1,8 @@
+{
+    "Batter1": { "X": 200, "Y": 940, "Width": 280, "Height": 35 },
+    "Batter2": { "X": 550, "Y": 940, "Width": 280, "Height": 35 },
+    "BattingTeam": { "X": 885, "Y": 930, "Width": 80, "Height": 40 },
+    "RunsWickets": { "X": 955, "Y": 930, "Width": 90, "Height": 40 , "IsScore": true },
+    "Overs": { "X": 920, "Y": 985, "Width": 35, "Height": 30 , "IsScore": true },
+    "Bowler": { "X": 1090, "Y": 940, "Width": 400, "Height": 35 }
+}

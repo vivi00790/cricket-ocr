@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.RegularExpressions;
+using Newtonsoft.Json;
 
 namespace CricketScoreReader;
 
@@ -29,60 +30,8 @@ public class GameParser
 
     public void ProcessFrameData(FrameData frameData, int frameNumber, DateTime timestamp)
     {
-        var runs = 0;
-        var wickets = 0;
-
-        switch (frameData.RunsWickets.Length)
-        {
-            case 1:
-            case 2:
-            case 3:
-                if (frameData.Runs1Digit.Length==1)
-                {
-                    runs = int.Parse(frameData.Runs1Digit);
-                    wickets = int.TryParse(frameData.Runs1DigitWickets, out var w) ? w : 9999;
-                }
-                else
-                {
-                    Console.WriteLine($"Unexpected runs label length: {JsonConvert.SerializeObject(frameData)}");
-                    runs=9999; // Invalid runs, set to a sentinel value
-                    wickets = 9999; // Invalid wickets, set to a sentinel value
-                }
-                break;
-            case 4:
-                if(frameData.Runs2Digits.Length==2)
-                {
-                    runs = int.Parse(frameData.Runs2Digits);
-                    wickets = int.Parse(frameData.Runs2DigitsWickets);
-                }
-                else
-                {
-                    Console.WriteLine($"Unexpected runs label length: {JsonConvert.SerializeObject(frameData)}");
-                    runs=9999; // Invalid runs, set to a sentinel value
-                    wickets = 9999; // Invalid wickets, set to a sentinel value
-                }
-                break;
-            case 5:
-                if(frameData.Runs3Digits.Length==3)
-                {
-                    runs = int.Parse(frameData.Runs3Digits);
-                    wickets = int.Parse(frameData.Runs3DigitsWickets);
-                }
-                else
-                {
-                    Console.WriteLine($"Unexpected runs label length: {JsonConvert.SerializeObject(frameData)}");
-                    runs=9999; // Invalid runs, set to a sentinel value
-                    wickets = 9999; // Invalid wickets, set to a sentinel value
-                }
-                break;
-            default:
-                Console.WriteLine($"Unexpected runs label length: {JsonConvert.SerializeObject(frameData)}");
-                runs=9999; // Invalid runs, set to a sentinel value
-                wickets = 9999; // Invalid wickets, set to a sentinel value
-                return;
-        }
-        var over = int.TryParse(frameData.Over, out var o) ? o : 9999;
-        var ball = int.TryParse(frameData.Ball, out var b) ? b : 9999;
+        if (!TryParseScore(frameData.RunsWickets, out int runs, out int wickets)) return;
+        if (!TryParseOvers(frameData.OverWithBall, out int over, out int ball)) return;
         _history.Add(new BallResult
         {
             OverNumber = over,
@@ -134,6 +83,28 @@ public class GameParser
                 _currentBall = ball;
             }
         }
+    }
+    
+    private bool TryParseScore(string text, out int runs, out int wickets)
+    {
+        runs = wickets = 0;
+        var match = Regex.Match(text ?? "", @"(\d+)\s*/\s*(\d+)");
+        if (!match.Success) return false;
+
+        runs = int.Parse(match.Groups[1].Value);
+        wickets = int.Parse(match.Groups[2].Value);
+        return true;
+    }
+
+    private bool TryParseOvers(string text, out int over, out int ball)
+    {
+        over = ball = 0;
+        var match = Regex.Match(text ?? "", @"(\d+)\.(\d+)");
+        if (!match.Success) return false;
+
+        over = int.Parse(match.Groups[1].Value);
+        ball = int.Parse(match.Groups[2].Value);
+        return true;
     }
 
 }

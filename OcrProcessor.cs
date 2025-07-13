@@ -67,7 +67,7 @@ public class OcrProcessor
 
             // scale up and extend horizontally
             Cv2.Resize(roiMat, roiMat, new Size(0, 0), 1.5, 1.2, InterpolationFlags.Cubic);
-            
+
             Cv2.CvtColor(roiMat, roiMat, ColorConversionCodes.BGR2GRAY);
             // apply blur, dilate, erode, sharpen, and threshold
             Cv2.MedianBlur(roiMat, roiMat, 3);
@@ -94,7 +94,7 @@ public class OcrProcessor
             using (page)
             {
                 var ocrResult = page.GetText().Trim();
-                
+
                 // check first player
                 if (label is "Batter1" or "Batter2")
                 {

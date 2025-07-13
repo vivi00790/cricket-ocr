@@ -76,7 +76,6 @@ public class GameParser : IGameParser
                     // if over or ball has not changed, handle wicket.
                     else if (wickets > lastWickets)
                     {
-                        
                         // delete last record and insert wicket record with last batter because wickets only change after player region changes(in next time scoreboard appears)
                         _results.RemoveAt(_results.Count - 1);
                         _results.Add(new BallResult
@@ -87,10 +86,10 @@ public class GameParser : IGameParser
                             Wickets = wickets - lastWickets.Value,
                             FrameNumber = frameNumber,
                             Timestamp = timestamp,
-                            Batter1 = ballResults[i-1].Batter1,
-                            Batter2 = ballResults[i-1].Batter2,
-                            BattingTeam = ballResults[i-1].BattingTeam,
-                            Bowler = ballResults[i-1].Bowler
+                            Batter1 = ballResults[i - 1].Batter1,
+                            Batter2 = ballResults[i - 1].Batter2,
+                            BattingTeam = ballResults[i - 1].BattingTeam,
+                            Bowler = ballResults[i - 1].Bowler
                         });
 
                         lastWickets = wickets;
@@ -100,61 +99,61 @@ public class GameParser : IGameParser
 
             return _results;
         }
-    }   
+    }
 
-public List < BallResult > History
-{
-    get {
-        lock (_lock)
+    public List<BallResult> History
+    {
+        get
         {
-            return _history.OrderBy(r => r.FrameNumber).ToList();
+            lock (_lock)
+            {
+                return _history.OrderBy(r => r.FrameNumber).ToList();
+            }
         }
     }
-}
 
-public void ProcessFrameData(FrameData frameData, int frameNumber, DateTime timestamp)
-{
-    if (!TryParseScore(frameData.RunsWithWickets, out var runs, out var wickets)) return;
-    if (!TryParseOvers(frameData.OversWithBalls, out var over, out var ball)) return;
-
-    lock (_lock)
+    public void ProcessFrameData(FrameData frameData, int frameNumber, DateTime timestamp)
     {
-        _history.Add(new BallResult
+        if (!TryParseScore(frameData.RunsWithWickets, out var runs, out var wickets)) return;
+        if (!TryParseOvers(frameData.OversWithBalls, out var over, out var ball)) return;
+
+        lock (_lock)
         {
-            OverNumber = over,
-            BallNumber = ball,
-            Runs = runs,
-            Wickets = wickets,
-            FrameNumber = frameNumber,
-            Timestamp = timestamp,
-            Batter1 = frameData.Batter1,
-            Batter2 = frameData.Batter2,
-            BattingTeam = frameData.BattingTeam,
-            Bowler = frameData.Bowler
-        });
+            _history.Add(new BallResult
+            {
+                OverNumber = over,
+                BallNumber = ball,
+                Runs = runs,
+                Wickets = wickets,
+                FrameNumber = frameNumber,
+                Timestamp = timestamp,
+                Batter1 = frameData.Batter1,
+                Batter2 = frameData.Batter2,
+                BattingTeam = frameData.BattingTeam,
+                Bowler = frameData.Bowler
+            });
+        }
     }
-}
 
-private static bool TryParseScore(string text, out int runs, out int wickets)
-{
-    runs = wickets = 0;
-    var match = Regex.Match(text, @"(\d+)\s*/\s*(\d+)");
-    if (!match.Success) return false;
+    private static bool TryParseScore(string text, out int runs, out int wickets)
+    {
+        runs = wickets = 0;
+        var match = Regex.Match(text, @"(\d+)\s*/\s*(\d+)");
+        if (!match.Success) return false;
 
-    runs = int.Parse(match.Groups[1].Value);
-    wickets = int.Parse(match.Groups[2].Value);
-    return true;
-}
+        runs = int.Parse(match.Groups[1].Value);
+        wickets = int.Parse(match.Groups[2].Value);
+        return true;
+    }
 
-private static bool TryParseOvers(string text, out int over, out int ball)
-{
-    over = ball = 0;
-    var match = Regex.Match(text, @"(\d+)\.(\d+)");
-    if (!match.Success) return false;
+    private static bool TryParseOvers(string text, out int over, out int ball)
+    {
+        over = ball = 0;
+        var match = Regex.Match(text, @"(\d+)\.(\d+)");
+        if (!match.Success) return false;
 
-    over = int.Parse(match.Groups[1].Value);
-    ball = int.Parse(match.Groups[2].Value);
-    return true;
-}
-
+        over = int.Parse(match.Groups[1].Value);
+        ball = int.Parse(match.Groups[2].Value);
+        return true;
+    }
 }

@@ -68,10 +68,13 @@ public class FramePipeline : IFramePipeline
             Console.WriteLine("Failed to open video file.");
             return;
         }
+
         var fps = capture.Get(VideoCaptureProperties.Fps);
         var intervalFrames = (int)(fps * _valueIntervalSeconds);
         Console.WriteLine("frame count:" + capture.Get(VideoCaptureProperties.FrameCount));
-        for (var f = producerId * intervalFrames; f < capture.Get(VideoCaptureProperties.FrameCount); f += producerCount * intervalFrames)
+        for (var f = producerId * intervalFrames;
+             f < capture.Get(VideoCaptureProperties.FrameCount);
+             f += producerCount * intervalFrames)
         {
             if (token.IsCancellationRequested) break;
 
@@ -94,6 +97,7 @@ public class FramePipeline : IFramePipeline
                 await _channel.Writer.WriteAsync(item, token);
             }
         }
+
         Console.WriteLine("Producer completed.");
     }
 

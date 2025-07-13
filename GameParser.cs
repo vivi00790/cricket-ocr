@@ -26,10 +26,10 @@ public class GameParser : IGameParser
         {
             lock (_lock)
             {
-                int? _lastRuns = null;
-                int? _lastWickets = null;
-                int _currentOver = 0;
-                int _currentBall = 0;
+                int? lastRuns = null;
+                int? lastWickets = null;
+                var currentOver = 0;
+                var currentBall = 0;
 
                 var ballResults = _history.OrderBy(r => r.FrameNumber).ToList();
                 for (var i = 0; i < ballResults.Count; i++)
@@ -43,30 +43,20 @@ public class GameParser : IGameParser
                     var timestamp = currentFrameData.Timestamp;
                     Console.WriteLine(
                         $"Processing frame data=>runs:{runs}, wickets:{wickets}, over:{over}, ball:{ball}, second:{frameNumber}, timestamp:{timestamp}");
-                    if (_lastRuns == null || _lastWickets == null)
+                    if (lastRuns == null || lastWickets == null)
                     {
-                        _lastRuns = runs;
-                        _lastWickets = wickets;
-                        _currentOver = over;
-                        _currentBall = ball;
+                        lastRuns = runs;
+                        lastWickets = wickets;
+                        currentOver = over;
+                        currentBall = ball;
                     }
 
-                    var deltaRuns = Math.Max(0, runs - _lastRuns.Value);
-                    var deltaWickets = Math.Max(0, wickets - _lastWickets.Value);
+                    var deltaRuns = Math.Max(0, runs - lastRuns.Value);
+                    var deltaWickets = Math.Max(0, wickets - lastWickets.Value);
 
                     // Only add a new result if either over or ball has changed
-                    if (over != _currentOver || ball != _currentBall)
+                    if (over != currentOver || ball != currentBall)
                     {
-                        // new innings
-                        if (over == 0 && ball == 0 && _currentOver != 0 && _currentBall != 0)
-                        {
-                            // Reset last runs and wickets for new innings
-                            _lastRuns = 0;
-                            _lastWickets = 0;
-                            _currentOver = 0;
-                            _currentBall = 0;
-                        }
-
                         _results.Add(new BallResult
                         {
                             OverNumber = over,
@@ -81,13 +71,13 @@ public class GameParser : IGameParser
                             Bowler = currentFrameData.Bowler
                         });
 
-                        _lastRuns = runs;
-                        _lastWickets = wickets;
-                        _currentOver = over;
-                        _currentBall = ball;
+                        lastRuns = runs;
+                        lastWickets = wickets;
+                        currentOver = over;
+                        currentBall = ball;
                     }
                     // if over or ball has not changed, handle wicket.
-                    else if (wickets > _lastWickets)
+                    else if (wickets > lastWickets)
                     {
                         
                         // delete last record and insert wicket record with last batter because wickets only change after player region changes(in next time scoreboard appears)
@@ -97,7 +87,7 @@ public class GameParser : IGameParser
                             OverNumber = over,
                             BallNumber = ball,
                             Runs = deltaRuns,
-                            Wickets = wickets - _lastWickets.Value,
+                            Wickets = wickets - lastWickets.Value,
                             FrameNumber = frameNumber,
                             Timestamp = timestamp,
                             Batter1 = ballResults[i-1].Batter1,
@@ -106,7 +96,7 @@ public class GameParser : IGameParser
                             Bowler = ballResults[i-1].Bowler
                         });
 
-                        _lastWickets = wickets;
+                        lastWickets = wickets;
                     }
                 }
             }

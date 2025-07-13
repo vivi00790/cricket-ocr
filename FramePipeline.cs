@@ -10,7 +10,6 @@ using OpenCvSharp;
 
 public interface IFramePipeline
 {
-    //Task RunAsync(CancellationToken token, int consumerCount = 2);
     Task RunAsync(CancellationToken token, int producerCount = 1, int consumerCount = 2);
 }
 
@@ -95,8 +94,9 @@ public class FramePipeline : IFramePipeline
         {
             Console.WriteLine(
                 $"Worker {workerId} processing frame {item.FrameNumber} at {item.Timestamp:HH:mm:ss.fff}");
+            // engine cannot share across threads, so create a new instance for each frame
             var ocrData = _processorFactory.Create().ProcessFrame(item.Frame);
-            if (IsTeamNameValid(ocrData["BattingTeam"]))
+            if (ocrData.ContainsKey("BattingTeam"))
             {
                 _parser.ProcessFrameData(new FrameData
                 {
@@ -113,11 +113,5 @@ public class FramePipeline : IFramePipeline
         }
 
         Console.WriteLine($"Worker {workerId} completed processing.");
-    }
-
-    private static bool IsTeamNameValid(string teamName)
-    {
-        return teamName.Length == 3 && teamName.Any(char.IsLetter) &&
-               teamName.All(c => !char.IsLetter(c) || char.IsUpper(c));
     }
 }

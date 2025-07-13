@@ -2,20 +2,11 @@
 
 namespace CricketScoreReader;
 
-public class FrameProcessorFactory : IFrameProcessorFactory
+public class FrameProcessorFactory(IOptions<OcrConfig> ocrConfig) : IFrameProcessorFactory
 {
-    private readonly string _tessdataPath;
-    private readonly string _roiPath;
-
-    public FrameProcessorFactory(IOptions<OcrConfig> ocrConfig)
-    {
-        _tessdataPath = ocrConfig.Value.TessDataPath;
-        _roiPath = ocrConfig.Value.RoiConfigPath;
-    }
-
     public FrameProcessor Create()
     {
-        return new FrameProcessor(_tessdataPath, _roiPath); // 每次產生新的 engine
+        return new FrameProcessor(ocrConfig.Value.TessDataPath, ocrConfig.Value.RoiConfigPath);
     }
 }
 

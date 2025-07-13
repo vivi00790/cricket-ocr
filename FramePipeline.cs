@@ -15,7 +15,7 @@ public interface IFramePipeline
 
 public class FramePipeline : IFramePipeline
 {
-    private readonly Channel<FrameItem> _channel;
+    private readonly Channel<FrameProcessPipelineItem> _channel;
 
     private readonly IGameParser _parser;
 
@@ -30,7 +30,7 @@ public class FramePipeline : IFramePipeline
         IFrameProcessorFactory processorFactory,
         IGameParser parser)
     {
-        _channel = Channel.CreateBounded<FrameItem>(new BoundedChannelOptions(100)
+        _channel = Channel.CreateBounded<FrameProcessPipelineItem>(new BoundedChannelOptions(100)
         {
             FullMode = BoundedChannelFullMode.Wait
         });
@@ -85,7 +85,7 @@ public class FramePipeline : IFramePipeline
                     continue;
                 }
 
-                var item = new FrameItem
+                var item = new FrameProcessPipelineItem
                 {
                     Frame = frame.Clone(),
                     FrameNumber = f,

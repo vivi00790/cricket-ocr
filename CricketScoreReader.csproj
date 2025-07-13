@@ -20,9 +20,6 @@
       <None Update="tessdata\eng.traineddata">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
-      <None Update="roi_config.json">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
       <None Update="match.mp4">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
@@ -35,7 +32,10 @@
       <None Update="match-origin.mp4">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
-      <None Update="appsettings.json">
+      <None Update="configs\roi_config.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="configs\appsettings.json">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
     </ItemGroup>

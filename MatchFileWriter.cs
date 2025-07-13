@@ -3,7 +3,7 @@
 using System.Collections.Generic;
 using System.IO;
 
-public static class MatchRecorder
+public static class MatchFileWriter
 {
     public static void WriteHistory(List<BallResult> results, string path)
     {
@@ -14,7 +14,7 @@ public static class MatchRecorder
                 $"{r.OverNumber},{r.BallNumber},{r.Runs},{r.Wickets},{r.FrameNumber},{r.FrameNumber / 30},{r.Timestamp:O},{r.Batter1},{r.Batter2},{r.BattingTeam},{r.Bowler}");
     }
 
-    public static void WriteResult(List<BallResult> results, string path)
+    public static void WriteBallRecordsWithTotalRunsAndWickets(List<BallResult> results, string path)
     {
         var currentRuns = 0;
         var currentWickets = 0;

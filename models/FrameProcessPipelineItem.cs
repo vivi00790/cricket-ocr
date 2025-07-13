@@ -2,7 +2,7 @@
 
 namespace CricketScoreReader;
 
-public class FrameItem
+public class FrameProcessPipelineItem
 {
     public Mat Frame { get; set; }
     public int FrameNumber { get; set; }

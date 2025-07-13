@@ -11,14 +11,14 @@ class Program
         using var host = Host.CreateDefaultBuilder(args)
             .ConfigureAppConfiguration((hostingContext, config) =>
             {
-                config.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+                config.AddJsonFile("configs/appsettings.json", optional: false, reloadOnChange: true);
             })
             .ConfigureServices((context, services) =>
             {
                 services.Configure<PipelineConfig>(context.Configuration.GetSection("PipelineConfig"));
                 services.Configure<OcrConfig>(context.Configuration.GetSection("OcrConfig"));
 
-                services.AddSingleton<IFrameProcessorFactory, FrameProcessorFactory>();
+                services.AddSingleton<IFrameProcessorFactory, OcrProcessorFactory>();
 
                 services.AddSingleton<IGameParser, GameParser>();
                 services.AddSingleton<IFramePipeline, FramePipeline>();
@@ -33,7 +33,7 @@ class Program
         var runTask = pipeline.RunAsync(cts.Token);
         await runTask;
         var parser = host.Services.GetRequiredService<IGameParser>();
-        MatchRecorder.WriteResult(parser.Results, "match_results.csv");
+        MatchFileWriter.WriteBallRecordsWithTotalRunsAndWickets(parser.Results, "match_results.csv");
         // For audit
         // MatchRecorder.WriteHistory(parser.History, "match_history.csv");
         stopwatch.Stop();

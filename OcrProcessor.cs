@@ -7,7 +7,7 @@ using System.Text.Json;
 using Tesseract;
 using CvRect = OpenCvSharp.Rect;
 
-public class FrameProcessor
+public class OcrProcessor
 {
     private readonly TesseractEngine _ocrNameEngine;
     private readonly Dictionary<string, CvRect> _roiMap;
@@ -15,7 +15,7 @@ public class FrameProcessor
     private readonly TesseractEngine _ocrRunWicketEngine;
     private readonly TesseractEngine _ocrTeamEngine;
 
-    public FrameProcessor(string tessdataPath, string roiConfigPath)
+    public OcrProcessor(string tessdataPath, string roiConfigPath)
     {
         // player name and team name not using system dictionary for better accuracy
         _ocrNameEngine = new TesseractEngine(tessdataPath, "eng", EngineMode.Default);

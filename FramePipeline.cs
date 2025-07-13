@@ -8,62 +8,75 @@ using System.Threading.Channels;
 using System.Threading.Tasks;
 using OpenCvSharp;
 
-public class FramePipeline
+public interface IFramePipeline
+{
+    //Task RunAsync(CancellationToken token, int consumerCount = 2);
+    Task RunAsync(CancellationToken token, int producerCount = 1, int consumerCount = 2);
+}
+
+public class FramePipeline : IFramePipeline
 {
     private readonly Channel<FrameItem> _channel;
-    private readonly VideoCapture _capture;
-    private readonly GameParser _parser;
-    private readonly int _intervalFrames;
+
+    private readonly IGameParser _parser;
+
     private readonly IFrameProcessorFactory _processorFactory;
+    private readonly string _valueVideoPath;
+    private readonly int _valueIntervalSeconds;
 
     public FramePipeline(
         IOptions<PipelineConfig> config,
         IFrameProcessorFactory processorFactory,
-        GameParser parser)
+        IGameParser parser)
     {
-        var cfg = config.Value;
-
         _channel = Channel.CreateBounded<FrameItem>(new BoundedChannelOptions(100)
         {
             FullMode = BoundedChannelFullMode.Wait
         });
 
-        _capture = new VideoCapture(cfg.VideoPath);
         _processorFactory = processorFactory;
         _parser = parser;
-
-        var fps = _capture.Get(VideoCaptureProperties.Fps);
-        _intervalFrames = (int)(fps * cfg.IntervalSeconds);
+        _valueVideoPath = config.Value.VideoPath;
+        _valueIntervalSeconds = config.Value.IntervalSeconds;
     }
 
-    public async Task RunAsync(CancellationToken token, int consumerCount = 2)
+    public async Task RunAsync(CancellationToken token, int producerCount = 1, int consumerCount = 2)
     {
         Console.WriteLine("Starting frame processing pipeline...");
-        var producerTask = Task.Run(() => ProduceAsync(token));
+        var producerTasks = Enumerable.Range(0, producerCount)
+            .Select(i => Task.Run(() => ProduceAsync(i, token), token))
+            .ToArray();
         var consumerTasks = Enumerable.Range(0, consumerCount)
-            .Select(i => Task.Run(() => ConsumeAsync(i, token)))
+            .Select(i => Task.Run(() => ConsumeAsync(i, token), token))
             .ToArray();
 
-        await producerTask;
+        await Task.WhenAll(producerTasks);
+        Console.WriteLine("All producer finished, completing channel.");
+        _channel.Writer.Complete();
         await Task.WhenAll(consumerTasks);
     }
 
-    private async Task ProduceAsync(CancellationToken token)
+    private async Task ProduceAsync(int producerId, CancellationToken token)
     {
-        Console.WriteLine("frame count:"+_capture.Get(VideoCaptureProperties.FrameCount));
-        for (var f = 0; f < _capture.Get(VideoCaptureProperties.FrameCount); f += _intervalFrames)
+        Console.WriteLine($"Producer {producerId} started.");
+        var capture = new VideoCapture(_valueVideoPath);
+        var fps = capture.Get(VideoCaptureProperties.Fps);
+        var intervalFrames = (int)(fps * _valueIntervalSeconds);
+        Console.WriteLine("frame count:" + capture.Get(VideoCaptureProperties.FrameCount));
+        for (var f = 0; f < capture.Get(VideoCaptureProperties.FrameCount); f += producerId + 1 * intervalFrames)
         {
             if (token.IsCancellationRequested) break;
 
-            _capture.Set(VideoCaptureProperties.PosFrames, f);
+            capture.Set(VideoCaptureProperties.PosFrames, f);
             var frame = new Mat();
-            if (_capture.Read(frame))
+            if (capture.Read(frame))
             {
                 if (frame.Empty())
                 {
                     Console.WriteLine($"frame {f} empty!!");
                     continue;
                 }
+
                 var item = new FrameItem
                 {
                     Frame = frame.Clone(),
@@ -73,8 +86,6 @@ public class FramePipeline
                 await _channel.Writer.WriteAsync(item, token);
             }
         }
-        Console.WriteLine("No more frames to process, completing channel.");
-        _channel.Writer.Complete();
         Console.WriteLine("Producer completed.");
     }
 
@@ -82,27 +93,31 @@ public class FramePipeline
     {
         await foreach (var item in _channel.Reader.ReadAllAsync(token))
         {
-            Console.WriteLine($"Worker {workerId} processing frame {item.FrameNumber} at {item.Timestamp:HH:mm:ss.fff}");
+            Console.WriteLine(
+                $"Worker {workerId} processing frame {item.FrameNumber} at {item.Timestamp:HH:mm:ss.fff}");
             var ocrData = _processorFactory.Create().ProcessFrame(item.Frame);
             if (IsTeamNameValid(ocrData["BattingTeam"]))
             {
                 _parser.ProcessFrameData(new FrameData
                 {
-                    RunsWickets = ocrData.GetValueOrDefault("RunsWickets", "999/999"),
-                    OverWithBall = ocrData.GetValueOrDefault("OverWithBall", "999.999"),
+                    RunsWithWickets = ocrData.GetValueOrDefault("RunsWickets", "999/999"),
+                    OversWithBalls = ocrData.GetValueOrDefault("OverWithBall", "999.999"),
                     Batter1 = ocrData.GetValueOrDefault("Batter1", "Unknown"),
                     Batter2 = ocrData.GetValueOrDefault("Batter2", "Unknown"),
                     Bowler = ocrData.GetValueOrDefault("Bowler", "Unknown"),
                     BattingTeam = ocrData.GetValueOrDefault("BattingTeam", "Unknown"),
                 }, item.FrameNumber, item.Timestamp);
             }
+
             item.Frame.Dispose();
         }
+
         Console.WriteLine($"Worker {workerId} completed processing.");
     }
 
     private static bool IsTeamNameValid(string teamName)
     {
-        return teamName.Length ==3 && teamName.Any(char.IsLetter) && teamName.All(c => !char.IsLetter(c) || char.IsUpper(c));
+        return teamName.Length == 3 && teamName.Any(char.IsLetter) &&
+               teamName.All(c => !char.IsLetter(c) || char.IsUpper(c));
     }
 }

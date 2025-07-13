@@ -12,7 +12,4 @@ public class BallResult
     public string Batter2 { get; set; }
     public string BattingTeam { get; set; }
     public string Bowler { get; set; }
-
-    public override string ToString() =>
-        $"Over {OverNumber}.{BallNumber} - Runs: {Runs}, Wickets: {Wickets}";
 }

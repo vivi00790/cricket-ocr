@@ -1,4 +1,5 @@
-﻿using CricketScoreReader;
+﻿using System.Diagnostics;
+using CricketScoreReader;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -21,22 +22,25 @@ class Program
                 });
                 services.AddSingleton<IFrameProcessorFactory, FrameProcessorFactory>();
 
-                services.AddSingleton<GameParser>();
-                services.AddSingleton<FramePipeline>();
+                services.AddSingleton<IGameParser, GameParser>();
+                services.AddSingleton<IFramePipeline, FramePipeline>();
             })
             .Build();
 
 
-        var pipeline = host.Services.GetRequiredService<FramePipeline>();
+        var pipeline = host.Services.GetRequiredService<IFramePipeline>();
         var cts = new CancellationTokenSource();
+        
 
-        var runTask = pipeline.RunAsync(cts.Token, 3);
+        var stopwatch = Stopwatch.StartNew();
+        var runTask = pipeline.RunAsync(cts.Token,1, 6);
 
         await runTask;
 
-        var parser = host.Services.GetRequiredService<GameParser>();
+        var parser = host.Services.GetRequiredService<IGameParser>();
         MatchRecorder.WriteResult(parser.Results, "match_results.csv");
         MatchRecorder.WriteHistory(parser.History, "match_history.csv");
-        Console.WriteLine("Done！");
+        stopwatch.Stop();
+        Console.WriteLine("Done！ Total time: {0} seconds", stopwatch.Elapsed.TotalSeconds);
     }
 }

@@ -7,7 +7,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-public class GameParser
+public interface IGameParser
+{
+    List<BallResult> Results { get; }
+    List<BallResult> History { get; }
+    void ProcessFrameData(FrameData frameData, int frameNumber, DateTime timestamp);
+}
+
+public class GameParser : IGameParser
 {
     private readonly Lock _lock = new();
     private readonly List<BallResult> _results = [];
@@ -120,8 +127,8 @@ public List < BallResult > History
 
 public void ProcessFrameData(FrameData frameData, int frameNumber, DateTime timestamp)
 {
-    if (!TryParseScore(frameData.RunsWickets, out var runs, out var wickets)) return;
-    if (!TryParseOvers(frameData.OverWithBall, out var over, out var ball)) return;
+    if (!TryParseScore(frameData.RunsWithWickets, out var runs, out var wickets)) return;
+    if (!TryParseOvers(frameData.OversWithBalls, out var over, out var ball)) return;
 
     lock (_lock)
     {

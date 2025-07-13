@@ -1,16 +1,8 @@
 {
-    "Batter1": { "X": 200, "Y": 940, "Width": 250, "Height": 35 },
+    "Batter1": { "X": 195, "Y": 940, "Width": 250, "Height": 35 },
     "Batter2": { "X": 530, "Y": 940, "Width": 250, "Height": 35 },
     "BattingTeam": { "X": 885, "Y": 930, "Width": 80, "Height": 40 },
-    "RunsWickets": { "X": 955, "Y": 930, "Width": 90, "Height": 40 , "IsScore": true },
-    "Runs1Digit": { "X": 968, "Y": 930, "Width": 20, "Height": 40 , "IsScore": true },
-    "Runs2Digits": { "X": 960, "Y": 930, "Width": 35, "Height": 40 , "IsScore": true },
-    "Runs3Digits": { "X": 952, "Y": 930, "Width": 50, "Height": 40 , "IsScore": true },
-    "Runs1DigitWickets": { "X": 990, "Y": 930, "Width": 40, "Height": 40 , "IsScore": true },
-    "Runs2DigitsWickets": { "X": 1004, "Y": 930, "Width": 40, "Height": 40 , "IsScore": true },
-    "Runs3DigitsWickets": { "X": 1013, "Y": 930, "Width": 40, "Height": 40 , "IsScore": true },
-    "OverWithBall":  { "X": 915, "Y": 985, "Width": 45, "Height": 30 , "IsScore": true },
-    "Over": { "X": 920, "Y": 985, "Width": 20, "Height": 30 , "IsScore": true },
-    "Ball": { "X": 935, "Y": 985, "Width": 20, "Height": 30 , "IsScore": true },
+    "RunsWickets": { "X": 955, "Y": 930, "Width": 90, "Height": 40 },
+    "OverWithBall":  { "X": 915, "Y": 985, "Width": 45, "Height": 30 },
     "Bowler": { "X": 1090, "Y": 940, "Width": 400, "Height": 35 }
 }

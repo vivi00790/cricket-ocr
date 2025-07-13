@@ -10,32 +10,28 @@ using CvRect = OpenCvSharp.Rect;
 
 public class FrameProcessor
 {
-    private readonly TesseractEngine _ocrEngine;
-    private readonly Dictionary<string, (bool IsScore, CvRect rect)> _roiMap;
+    private readonly TesseractEngine _ocrNameEngine;
+    private readonly Dictionary<string, CvRect> _roiMap;
     private readonly TesseractEngine _ocrRunEngine;
     private readonly TesseractEngine _ocrOverEngine;
-    private readonly TesseractEngine _ocrBallEngine;
+    private readonly TesseractEngine _ocrOverBallEngine;
     private readonly TesseractEngine _ocrRunWicketEngine;
     private readonly TesseractEngine _ocrTeamEngine;
 
     public FrameProcessor(string tessdataPath, string roiConfigPath)
     {
-        _ocrEngine = new TesseractEngine(tessdataPath, "eng", EngineMode.Default);
-        _ocrEngine.SetVariable("tessedit_char_whitelist", "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz. ");
-        _ocrEngine.SetVariable("load_system_dawg", "F");
-        _ocrEngine.SetVariable("load_freq_dawg", "F");
+        _ocrNameEngine = new TesseractEngine(tessdataPath, "eng", EngineMode.Default);
+        _ocrNameEngine.SetVariable("tessedit_char_whitelist", "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz. ");
+        _ocrNameEngine.SetVariable("load_system_dawg", "F");
+        _ocrNameEngine.SetVariable("load_freq_dawg", "F");
         _ocrTeamEngine = new TesseractEngine(tessdataPath, "eng", EngineMode.Default);
         _ocrTeamEngine.SetVariable("tessedit_char_whitelist", "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
         _ocrTeamEngine.SetVariable("load_system_dawg", "F");
         _ocrTeamEngine.SetVariable("load_freq_dawg", "F");
-        _ocrRunEngine = new TesseractEngine(tessdataPath, "eng", EngineMode.Default);
-        _ocrRunEngine.SetVariable("tessedit_char_whitelist", "0123456789");
         _ocrRunWicketEngine = new TesseractEngine(tessdataPath, "eng", EngineMode.Default);
-        _ocrRunWicketEngine.SetVariable("tessedit_char_whitelist", "0123456789/");
-        _ocrOverEngine = new TesseractEngine(tessdataPath, "eng", EngineMode.Default);
-        _ocrOverEngine.SetVariable("tessedit_char_whitelist", "01234");
-        _ocrBallEngine = new TesseractEngine(tessdataPath, "eng", EngineMode.Default);
-        _ocrBallEngine.SetVariable("tessedit_char_whitelist", "0123456.");
+        _ocrRunWicketEngine.SetVariable("tessedit_char_whitelist", "01234567890/");
+        _ocrOverBallEngine = new TesseractEngine(tessdataPath, "eng", EngineMode.Default);
+        _ocrOverBallEngine.SetVariable("tessedit_char_whitelist", "0123456.");
         _roiMap = LoadRoiConfig(roiConfigPath);
     }
 
@@ -44,61 +40,85 @@ public class FrameProcessor
         Console.WriteLine("Processing frame...");
         var results = new Dictionary<string, string>();
 
-        foreach (var (label, (isScore, roi)) in _roiMap)
+        foreach (var (label,  roi) in _roiMap)
         {
-            if (roi.X + roi.Width <= frame.Width && roi.Y + roi.Height <= frame.Height)
-            {
-                
-                var roiMat = new Mat(frame, roi);
-                if (roiMat.Empty())
-                {
-                    Console.WriteLine($"ROI error frame={frame.Width}x{frame.Height}, roi={roi}");
-                    continue;
-                }
-                Cv2.Resize(roiMat, roiMat, new Size(0,0),1.5, 1.2, InterpolationFlags.Cubic); // 放大ROI以提高OCR準確率
-
-                Cv2.CvtColor(roiMat, roiMat, ColorConversionCodes.BGR2GRAY); 
-                
-                if (true)
-                {
-                    Cv2.MedianBlur(roiMat, roiMat, 3);
-                    Cv2.Dilate(roiMat, roiMat, Cv2.GetStructuringElement(MorphShapes.Rect, new Size(1, 1)));
-                    Cv2.MedianBlur(roiMat, roiMat, 3);
-                    Cv2.Erode(roiMat, roiMat, Cv2.GetStructuringElement(MorphShapes.Rect, new Size(1, 1)));
-                    Cv2.MedianBlur(roiMat, roiMat, 3);
-                    Cv2.Filter2D(roiMat, roiMat, -1, InputArray.Create(new[,] { {-1,-1,-1},{-1,9,-1},{-1,-1,-1} }));
-                    Cv2.MedianBlur(roiMat, roiMat, 3);
-                }
-
-                Cv2.Threshold(roiMat, roiMat, 0, 255, ThresholdTypes.Binary | ThresholdTypes.Otsu);
-                Cv2.BitwiseNot(roiMat, roiMat);
-
-
-                //Cv2.ImShow("ROI Preview", roiMat);
-                //Cv2.WaitKey(0);
-                using var pix = MatToPix(roiMat);
-                var page = label switch
-                {
-                    "RunsWickets" => _ocrRunWicketEngine.Process(pix, PageSegMode.SingleLine),
-                    "Runs1Digit" => _ocrRunEngine.Process(pix, PageSegMode.SingleChar),
-                    "Runs2Digits" or "Runs3Digits" => _ocrRunEngine.Process(pix, PageSegMode.SingleChar),
-                    "Runs1DigitWickets" or "Runs2DigitsWickets" or "Runs3DigitsWickets" => _ocrRunWicketEngine.Process(pix, PageSegMode.SingleChar),
-                    "Over" => _ocrOverEngine.Process(pix, PageSegMode.SingleChar),
-                    "Ball" or "OverWithBall" => _ocrBallEngine.Process(pix, PageSegMode.SingleLine),
-                    "BattingTeam" => _ocrTeamEngine.Process(pix, PageSegMode.SingleLine),
-                    _ => _ocrEngine.Process(pix, PageSegMode.SparseText)
-                };
-
-                using (page)
-                {
-                    var result = page.GetText().Trim();
-                    Console.WriteLine(label+" OCR result:"+result);
-                    results[label] = result;
-                }
-            }
+            ProcessFrame(frame, roi, label, results);
         }
 
         return results;
+    }
+
+    private void ProcessFrame(Mat frame, CvRect roi, string label, Dictionary<string, string> results)
+    {
+        if (roi.X + roi.Width <= frame.Width && roi.Y + roi.Height <= frame.Height)
+        {
+                
+            var roiMat = new Mat(frame, roi);
+            if (roiMat.Empty())
+            {
+                Console.WriteLine($"ROI error frame={frame.Width}x{frame.Height}, roi={roi}");
+                return;
+            }
+            Cv2.Resize(roiMat, roiMat, new Size(0,0),1.5, 1.2, InterpolationFlags.Cubic); // 放大ROI以提高OCR準確率
+
+            Cv2.CvtColor(roiMat, roiMat, ColorConversionCodes.BGR2GRAY);
+
+            Cv2.MedianBlur(roiMat, roiMat, 3);
+            Cv2.Dilate(roiMat, roiMat, Cv2.GetStructuringElement(MorphShapes.Rect, new Size(1, 1)));
+            Cv2.MedianBlur(roiMat, roiMat, 3);
+            Cv2.Erode(roiMat, roiMat, Cv2.GetStructuringElement(MorphShapes.Rect, new Size(1, 1)));
+            Cv2.MedianBlur(roiMat, roiMat, 3);
+            Cv2.Filter2D(roiMat, roiMat, -1, InputArray.Create(new[,] { {-1,-1,-1},{-1,9,-1},{-1,-1,-1} }));
+            Cv2.MedianBlur(roiMat, roiMat, 3);
+
+            Cv2.Threshold(roiMat, roiMat, 0, 255, ThresholdTypes.Binary | ThresholdTypes.Otsu);
+            Cv2.BitwiseNot(roiMat, roiMat);
+
+            //Cv2.ImShow("ROI Preview", roiMat);
+            //Cv2.WaitKey(0);
+                
+            using var pix = MatToPix(roiMat);
+            var page = label switch
+            {
+                "RunsWickets" => _ocrRunWicketEngine.Process(pix, PageSegMode.SingleLine),
+                "OverWithBall" => _ocrOverBallEngine.Process(pix, PageSegMode.SingleLine),
+                "BattingTeam" => _ocrTeamEngine.Process(pix, PageSegMode.SingleLine),
+                _ => _ocrNameEngine.Process(pix, PageSegMode.SingleLine)
+            };
+
+            using (page)
+            {
+                var result = page.GetText().Trim();
+                //Console.WriteLine(label + " OCR Result: " + result);
+                if (label is "BattingTeam" && IsValidTeamName(result))
+                {
+                        
+                }
+                if (label is "Batter1" or "Batter2")
+                {
+                    var arrowRegion = new Mat(roiMat, new CvRect(0, 0, 20, roiMat.Rows));
+                    var nonArrowPixels = Cv2.CountNonZero(arrowRegion);
+                    // arrow ~ 80 pixels, arrow region ~ 840 pixels
+                    var hasArrow = nonArrowPixels < arrowRegion.Rows * arrowRegion.Cols * 0.95;
+                        
+                    // arrow sing indicates batter1
+                    if (hasArrow)
+                    {
+                        results["Batter1"] = result;
+                    }
+                    else
+                    {
+                        results["Batter2"] = result;
+                    }
+                    Console.WriteLine($"OCR Result for {label} (with arrow check): {result}, hasArrow: {hasArrow}");
+                }
+                else
+                {
+                    results[label] = result;
+                }
+                    
+            }
+        }
     }
 
     private static Pix MatToPix(Mat roiMat)
@@ -127,15 +147,15 @@ public class FrameProcessor
         }
     }
 
-    private Dictionary<string, (bool IsScore, CvRect rect)> LoadRoiConfig(string path)
+    private Dictionary<string, CvRect> LoadRoiConfig(string path)
     {
         var json = File.ReadAllText(path);
         var raw = JsonSerializer.Deserialize<Dictionary<string, RoiRect>>(json);
-        var result = new Dictionary<string, (bool IsScore, CvRect rect)>();
+        var result = new Dictionary<string, CvRect>();
         foreach (var kvp in raw)
         {
             var r = kvp.Value;
-            result[kvp.Key] = (r.IsScore, new CvRect(r.X, r.Y, r.Width, r.Height));
+            result[kvp.Key] = new CvRect(r.X, r.Y, r.Width, r.Height);
         }
         return result;
     }
@@ -146,6 +166,10 @@ public class FrameProcessor
         public int Y { get; set; }
         public int Width { get; set; }
         public int Height { get; set; }
-        public bool IsScore { get; set; }
+    }
+    
+    private static bool IsValidTeamName(string teamName)
+    {
+        return teamName.Length ==3 && teamName.Any(char.IsLetter) && teamName.All(c => !char.IsLetter(c) || char.IsUpper(c));
     }
 }

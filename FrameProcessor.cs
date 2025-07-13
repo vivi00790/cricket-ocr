@@ -36,7 +36,6 @@ public class FrameProcessor
 
     public Dictionary<string, string> ProcessFrame(Mat frame)
     {
-        Console.WriteLine("Processing frame...");
         var results = new Dictionary<string, string>();
 
         ProcessFrame(frame, _roiMap["BattingTeam"], "BattingTeam", results);

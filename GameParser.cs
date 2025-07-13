@@ -1,5 +1,4 @@
 ﻿using System.Text.RegularExpressions;
-using Newtonsoft.Json;
 
 namespace CricketScoreReader;
 
@@ -41,8 +40,6 @@ public class GameParser : IGameParser
                     var ball = currentFrameData.BallNumber;
                     var frameNumber = currentFrameData.FrameNumber;
                     var timestamp = currentFrameData.Timestamp;
-                    Console.WriteLine(
-                        $"Processing frame data=>runs:{runs}, wickets:{wickets}, over:{over}, ball:{ball}, second:{frameNumber}, timestamp:{timestamp}");
                     if (lastRuns == null || lastWickets == null)
                     {
                         lastRuns = runs;
@@ -141,7 +138,7 @@ public void ProcessFrameData(FrameData frameData, int frameNumber, DateTime time
 private static bool TryParseScore(string text, out int runs, out int wickets)
 {
     runs = wickets = 0;
-    var match = Regex.Match(text ?? "", @"(\d+)\s*/\s*(\d+)");
+    var match = Regex.Match(text, @"(\d+)\s*/\s*(\d+)");
     if (!match.Success) return false;
 
     runs = int.Parse(match.Groups[1].Value);
@@ -152,7 +149,7 @@ private static bool TryParseScore(string text, out int runs, out int wickets)
 private static bool TryParseOvers(string text, out int over, out int ball)
 {
     over = ball = 0;
-    var match = Regex.Match(text ?? "", @"(\d+)\.(\d+)");
+    var match = Regex.Match(text, @"(\d+)\.(\d+)");
     if (!match.Success) return false;
 
     over = int.Parse(match.Groups[1].Value);

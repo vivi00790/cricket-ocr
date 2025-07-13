@@ -10,7 +10,7 @@ using OpenCvSharp;
 
 public interface IFramePipeline
 {
-    Task RunAsync(CancellationToken token, int producerCount = 1, int consumerCount = 2);
+    Task RunAsync(CancellationToken token);
 }
 
 public class FramePipeline : IFramePipeline
@@ -22,6 +22,8 @@ public class FramePipeline : IFramePipeline
     private readonly IFrameProcessorFactory _processorFactory;
     private readonly string _valueVideoPath;
     private readonly int _valueIntervalSeconds;
+    private readonly int _producerCount;
+    private readonly int _consumerCount;
 
     public FramePipeline(
         IOptions<PipelineConfig> config,
@@ -36,16 +38,18 @@ public class FramePipeline : IFramePipeline
         _processorFactory = processorFactory;
         _parser = parser;
         _valueVideoPath = config.Value.VideoPath;
-        _valueIntervalSeconds = config.Value.IntervalSeconds;
+        _valueIntervalSeconds = config.Value.SamplingIntervalSeconds;
+        _producerCount = config.Value.producerCount;
+        _consumerCount = config.Value.consumerCount;
     }
 
-    public async Task RunAsync(CancellationToken token, int producerCount = 1, int consumerCount = 2)
+    public async Task RunAsync(CancellationToken token)
     {
         Console.WriteLine("Starting frame processing pipeline...");
-        var producerTasks = Enumerable.Range(0, producerCount)
-            .Select(i => Task.Run(() => ProduceAsync(i, token), token))
+        var producerTasks = Enumerable.Range(0, _producerCount)
+            .Select(i => Task.Run(() => ProduceAsync(i, _producerCount, token), token))
             .ToArray();
-        var consumerTasks = Enumerable.Range(0, consumerCount)
+        var consumerTasks = Enumerable.Range(0, _consumerCount)
             .Select(i => Task.Run(() => ConsumeAsync(i, token), token))
             .ToArray();
 
@@ -55,14 +59,19 @@ public class FramePipeline : IFramePipeline
         await Task.WhenAll(consumerTasks);
     }
 
-    private async Task ProduceAsync(int producerId, CancellationToken token)
+    private async Task ProduceAsync(int producerId, int producerCount, CancellationToken token)
     {
         Console.WriteLine($"Producer {producerId} started.");
         var capture = new VideoCapture(_valueVideoPath);
+        if (!capture.IsOpened())
+        {
+            Console.WriteLine("Failed to open video file.");
+            return;
+        }
         var fps = capture.Get(VideoCaptureProperties.Fps);
         var intervalFrames = (int)(fps * _valueIntervalSeconds);
         Console.WriteLine("frame count:" + capture.Get(VideoCaptureProperties.FrameCount));
-        for (var f = 0; f < capture.Get(VideoCaptureProperties.FrameCount); f += producerId + 1 * intervalFrames)
+        for (var f = producerId * intervalFrames; f < capture.Get(VideoCaptureProperties.FrameCount); f += producerCount * intervalFrames)
         {
             if (token.IsCancellationRequested) break;
 

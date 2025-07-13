@@ -15,7 +15,7 @@ public interface IGameParser
 
 public class GameParser : IGameParser
 {
-    private readonly Lock _lock = new();
+    private readonly object _lock = new();
     private readonly List<BallResult> _results = [];
     private readonly List<BallResult> _history = [];
 

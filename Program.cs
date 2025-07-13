@@ -38,6 +38,7 @@ class Program
         // For audit
         // MatchRecorder.WriteHistory(parser.History, "match_history.csv");
         stopwatch.Stop();
-        Console.WriteLine("Done！ Total time: {0} seconds", stopwatch.Elapsed.TotalSeconds);
+        Console.WriteLine("Done！ Total time: {0} seconds. Press any key to exit.", stopwatch.Elapsed.TotalSeconds);
+        Console.ReadKey();
     }
 }

@@ -16,19 +16,20 @@ public interface IGameParser
 public class GameParser : IGameParser
 {
     private readonly object _lock = new();
-    private readonly List<BallResult> _results = [];
     private readonly List<BallResult> _history = [];
 
     public List<BallResult> Results
     {
         get
         {
+            var results = new List<BallResult>();
             lock (_lock)
             {
                 int? lastRuns = null;
                 int? lastWickets = null;
                 var currentOver = 0;
                 var currentBall = 0;
+
 
                 var ballResults = _history.OrderBy(r => r.FrameNumber).ToList();
                 for (var i = 0; i < ballResults.Count; i++)
@@ -50,11 +51,13 @@ public class GameParser : IGameParser
 
                     var deltaRuns = Math.Max(0, runs - lastRuns.Value);
                     var deltaWickets = Math.Max(0, wickets - lastWickets.Value);
+                    
+                    
 
                     // Only add a new result if either over or ball has changed
                     if (over != currentOver || ball != currentBall)
                     {
-                        _results.Add(new BallResult
+                        results.Add(new BallResult
                         {
                             OverNumber = over,
                             BallNumber = ball,
@@ -77,8 +80,11 @@ public class GameParser : IGameParser
                     else if (wickets > lastWickets)
                     {
                         // delete last record and insert wicket record with last batter because wickets only change after player region changes(in next time scoreboard appears)
-                        _results.RemoveAt(_results.Count - 1);
-                        _results.Add(new BallResult
+                        if (results.Count != 0)
+                        {
+                            results.RemoveAt(results.Count - 1);
+                        }
+                        results.Add(new BallResult
                         {
                             OverNumber = over,
                             BallNumber = ball,
@@ -97,7 +103,7 @@ public class GameParser : IGameParser
                 }
             }
 
-            return _results;
+            return results;
         }
     }
 

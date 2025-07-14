@@ -36,7 +36,7 @@ class Program
         var parser = host.Services.GetRequiredService<IGameParser>();
         MatchFileWriter.WriteBallRecordsWithTotalRunsAndWickets(parser.Results, "match_results.csv");
         // For audit
-        // MatchRecorder.WriteHistory(parser.History, "match_history.csv");
+        MatchFileWriter.WriteHistory(parser.History, "match_history.csv");
         stopwatch.Stop();
         Console.WriteLine("Done！ Total time: {0} seconds. Press any key to exit.", stopwatch.Elapsed.TotalSeconds);
         Console.ReadKey();

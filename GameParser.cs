@@ -55,7 +55,7 @@ public class GameParser : IGameParser
                     
 
                     // Only add a new result if either over or ball has changed
-                    if (over != currentOver || ball != currentBall)
+                    if (over != currentOver || ball != currentBall || (over == currentOver && ball == currentBall && deltaRuns > 0))
                     {
                         results.Add(new BallResult
                         {

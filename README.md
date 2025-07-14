@@ -1,3 +1,14 @@
+# The Sample Data is wrong!!
+<img width="1308" height="212" alt="image" src="https://github.com/user-attachments/assets/e7406243-6e94-4665-84be-92aedcaa8da7" />
+<img width="1328" height="213" alt="image" src="https://github.com/user-attachments/assets/c72fbf3c-a06b-40b1-9da4-55968ee16893" />
+<img width="1228" height="204" alt="image" src="https://github.com/user-attachments/assets/0f63374e-215f-4a1a-9edc-46d9ada04b05" />
+<img width="1209" height="218" alt="image" src="https://github.com/user-attachments/assets/6fad8489-bff8-4a40-a839-c65bb8459746" />
+<img width="1277" height="195" alt="image" src="https://github.com/user-attachments/assets/037ba512-2486-4d39-89b5-ec43ca6c8ed3" />
+
+# As the screenshot shows, 2.0 should be: P. Cummings Bowler, D. Malan First Batter, J. Roy Second Batter
+<img width="858" height="144" alt="image" src="https://github.com/user-attachments/assets/a68f33b8-fa4d-4a01-ba4a-77061665d6b6" />
+
+---
 Install:
 - Download [release.zip](https://drive.google.com/file/d/14QlPcUjy1G_xxKmMCscdozL6c3DzhkNC/view?usp=sharing) or build from source code
 
